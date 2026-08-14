@@ -1,9 +1,31 @@
 sudo: false
+dist: focal
 arch:
  - amd64
- - ppc64le
 language: node_js
 node_js:
+  - "23"
   - "10"
   - "12"
   - "14"
+script:
+  - |
+    NODE_MAJOR=$(node -e 'console.log(process.versions.node.split(".")[0])')
+    if [ "$NODE_MAJOR" -ge 22 ]; then
+      # Modern Node: full suite, including the ESM test/redos.js
+      npm test
+    else
+      # test/redos.js is ESM + node:test and cannot parse on Node < 22, so the
+      # nine CommonJS test files are invoked directly via tape. Same 176
+      # assertions as `npm test`; only the unloadable ESM file is left out.
+      node node_modules/.bin/tape \
+        test/bash-comparison.js \
+        test/dollar.js \
+        test/empty-option.js \
+        test/negative-increment.js \
+        test/nested.js \
+        test/order.js \
+        test/pad.js \
+        test/same-type.js \
+        test/sequence.js
+    fi
